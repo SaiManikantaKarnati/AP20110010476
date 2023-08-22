@@ -1,29 +1,23 @@
-from flask import Flask, jsonify, request
-import requests
-
+from flask import Flask, request
+import urllib.request, urllib.parse, json
 app = Flask(__name__)
 
-def get_numbers_from_url(url):
-    try:
-        response = requests.get(url)
-        data = response.json()
-        if "nuumber" in data and isinstance(data["number"], list):
-            return data["number"]
-        else:
-            return None
-    except Exception as e:
-        return None
-    
-@app.route("/numbers", methods=['POST'])
-def get_numbers():
-    urls = request.args.get('url')
-    res = {}
-    for url in urls:
-        numbers = get_numbers_from_url(url)
-        if numbers is not None:
-            res[url] = numbers
-    return jsonify(res)
+@app.route('/numbers')
+def query_example():
+    query = request.args.getlist('url')
+    merged_numbers= []
+    for url in query:
+        if url == 'http://20.244.56.144/numbers/primes' or url == 'http://20.244.56.144/numbers/fibo' or url == 'http://20.244.56.144/numbers/rand' or url == 'http://20.244.56.144/numbers/odd':
+            merged_numbers.extend(getUrlResponseData(url))
 
-if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=8008)
+    unique_numbers = list(set(merged_numbers))
+    return f'Unique numbers: {unique_numbers}'
 
+def getUrlResponseData(url):
+    response = urllib.request.urlopen(url)
+    data = response.read()
+    dict = json.loads(data)
+    return dict["numbers"]
+
+if __name__ == '__main__':
+    app.run(debug=True, port=8000)
